@@ -1,0 +1,1748 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PrepSync — AI Meeting Prep Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- NAV -->
+    <nav>
+      <div class="logo">
+        <div class="hamburger" onclick="toggleSidebar()">
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+        <div class="logo-dot"></div>
+        PrepSync
+      </div>
+      <div class="nav-badge">Memory-Powered</div>
+      <div class="nav-right">
+        <div class="cloud-status">
+          <div class="cloud-dot"></div>
+          Hindsight Cloud Connected
+        </div>
+        <button class="nav-btn" onclick="openRecordings()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          <span>Recordings</span>
+        </button>
+        <button class="nav-btn" onclick="openSettings()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" />
+          </svg>
+          <span>Settings</span>
+        </button>
+        <button class="nav-btn primary" onclick="openNewMeeting()">+ <span>New Meeting</span></button>
+
+        <div class="nav-user-wrap" id="userWrap">
+          <div class="nav-user-avatar" id="userAvatarBtn" onclick="toggleUserDropdown()">
+            <span id="userInitials">?</span>
+          </div>
+          <div class="user-dropdown" id="userDropdown" style="display:none">
+            <div class="user-info-row">
+              <div class="user-name" id="ddUserName">Guest</div>
+              <div class="user-email" id="ddUserEmail">Not signed in</div>
+            </div>
+            <button class="dropdown-item" onclick="openSettings(); toggleUserDropdown()">
+              ⚙️ Settings
+            </button>
+            <button class="dropdown-item" onclick="openRecordings(); toggleUserDropdown()">
+              🎙️ Recordings
+            </button>
+            <button class="dropdown-item danger" onclick="signOut()">
+              🚪 Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <div class="main">
+      <!-- SIDEBAR -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-label">Contacts</div>
+
+        <div id="contactList"></div>
+
+        <button class="add-contact-btn" onclick="openAddContact()">+ Add Contact</button>
+
+        <div class="sidebar-label" style="margin-top:12px">Upcoming</div>
+        <div id="upcomingList">
+          <div
+            style="padding:12px;background:rgba(67,233,123,0.05);border:1px solid rgba(67,233,123,0.2);border-radius:10px;font-size:12px; margin-bottom: 8px;">
+            <div
+              style="color:var(--accent3);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;font-weight:700">
+              Today 3:00 PM</div>
+            <div style="font-weight:700;font-size:13px;">Q2 Strategy Review</div>
+            <div style="color:var(--muted);margin-top:2px;font-weight:300;font-size:12px">with Arjun Patel</div>
+          </div>
+        </div>
+      </aside>
+
+
+      <!-- MAIN CONTENT -->
+      <main class="content" id="mainContent">
+
+        <!-- HERO -->
+        <div class="hero">
+          <div class="hero-left">
+            <div class="hero-eyebrow">Active Contact</div>
+            <div class="hero-name" id="contactName">Siddharth</div>
+            <div class="hero-meta">
+              <span id="contactOrg">🏢 Denovate</span>
+              <span id="contactMeetingInfo">📅 4 past meetings</span>
+              <span>🕐 Last met: 2 weeks ago</span>
+            </div>
+            <div style="margin-top:14px">
+              <div class="memory-pill">
+                <div class="memory-pill-dot"></div>
+                Hindsight memory: 4 sessions loaded
+              </div>
+            </div>
+          </div>
+          <div class="hero-right">
+            <div class="meeting-timer">
+              <div class="timer-label">Meeting In</div>
+              <div class="timer-value" id="countdown">02:18:45</div>
+            </div>
+            <div style="display:flex; gap:10px; flex-direction: column;">
+              <button class="prep-btn" id="prepBtn" onclick="generateBriefing()">
+                ⚡ Generate Brief
+              </button>
+              <button class="prep-btn" onclick="joinMeeting()" style="background:var(--accent3); color:white; border:none;">
+                📹 Join Meeting
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('briefing', this)">AI Briefing</button>
+          <button class="tab" onclick="switchTab('memory', this)">Memory Log</button>
+          <button class="tab" onclick="switchTab('promises', this)">Commitments</button>
+          <button class="tab" onclick="switchTab('chat', this)">Ask Agent</button>
+          <button class="tab" onclick="switchTab('new', this)">Log Meeting</button>
+          <button class="tab" onclick="switchTab('recordings', this)">🎙 Recordings</button>
+        </div>
+
+        <!-- ── BRIEFING TAB ── -->
+        <div id="tab-briefing">
+          <div class="stat-chips">
+            <div class="stat-chip">
+              <div class="stat-num" style="color:var(--accent)">4</div>
+              <div class="stat-label">Meetings</div>
+            </div>
+            <div class="stat-chip">
+              <div class="stat-num" style="color:var(--accent2)">3</div>
+              <div class="stat-label">Open Items</div>
+            </div>
+            <div class="stat-chip">
+              <div class="stat-num" style="color:var(--accent3)">87%</div>
+              <div class="stat-label">Sentiment</div>
+            </div>
+            <div class="stat-chip">
+              <div class="stat-num" style="color:#4ecdc4">2</div>
+              <div class="stat-label">Promises Due</div>
+            </div>
+          </div>
+
+          <div id="briefingOutput" class="briefing-card" style="display:none"></div>
+
+          <div id="briefingPlaceholder">
+            <div class="empty-state">
+              <div class="empty-icon">🧠</div>
+              <div class="empty-title">Ready to Brief You</div>
+              <div class="empty-sub">Click "Generate Brief" to get a personalized AI briefing based on all your past
+                interactions with this contact.</div>
+            </div>
+          </div>
+
+          <div class="briefing-section">
+            <div class="section-header">
+              <div class="section-title">🎯 Suggested Agenda</div>
+              <div class="section-badge">AI Generated</div>
+            </div>
+            <div class="cards-grid">
+              <div class="card purple">
+                <div class="card-header">
+                  <div class="card-title">Follow up: API integration</div>
+                  <div class="card-icon purple">🔗</div>
+                </div>
+                <div style="font-size:12px;color:var(--muted);line-height:1.7;font-weight:300">Promised to share the
+                  integration doc in last call. Check if they've reviewed it and address blockers.</div>
+                <div class="timeline-tags" style="margin-top:12px">
+                  <div class="tag highlight">Open Promise</div>
+                  <div class="tag">15 min</div>
+                </div>
+              </div>
+              <div class="card red">
+                <div class="card-header">
+                  <div class="card-title">Pricing discussion</div>
+                  <div class="card-icon red">💰</div>
+                </div>
+                <div style="font-size:12px;color:var(--muted);line-height:1.7;font-weight:300">Arjun raised budget
+                  concerns in call #3. Q2 budget just released—good time to revisit enterprise tier.</div>
+                <div class="timeline-tags" style="margin-top:12px">
+                  <div class="tag"
+                    style="border-color:rgba(255,107,107,0.3);color:var(--accent2);background:rgba(255,107,107,0.1)">
+                    Sensitive</div>
+                  <div class="tag">20 min</div>
+                </div>
+              </div>
+              <div class="card green">
+                <div class="card-header">
+                  <div class="card-title">Product roadmap alignment</div>
+                  <div class="card-icon green">🗺</div>
+                </div>
+                <div style="font-size:12px;color:var(--muted);line-height:1.7;font-weight:300">They've consistently
+                  asked about the analytics dashboard. Share the Q3 roadmap preview.</div>
+                <div class="timeline-tags" style="margin-top:12px">
+                  <div class="tag">Opportunity</div>
+                  <div class="tag">20 min</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── MEMORY TAB ── -->
+        <div id="tab-memory" style="display:none">
+          <div class="section-header">
+            <div class="section-title">🧠 Interaction History <span class="section-badge">Hindsight Memory</span></div>
+          </div>
+          <div class="timeline" id="timelineContainer">
+            <div class="timeline-line"></div>
+            <!-- Dynamic items go here -->
+          </div>
+        </div>
+
+        <!-- ── PROMISES TAB ── -->
+        <div id="tab-promises" style="display:none">
+          <div class="section-header">
+            <div class="section-title">📋 Commitments Tracker</div>
+            <div class="section-badge">Auto-Tracked</div>
+          </div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.7;font-weight:300">
+            The agent automatically extracts and tracks commitments made in every meeting.
+          </div>
+
+          <div id="promisesList">
+            <div class="promise-item">
+              <div class="promise-check" onclick="togglePromise(this)"></div>
+              <div class="promise-info">
+                <div class="promise-text">Send revised onboarding deck with new team member flow</div>
+                <div class="promise-meta">Promised Apr 4 · Due Apr 10 · <span
+                    style="color:var(--accent2)">Overdue</span></div>
+              </div>
+              <div class="promise-status pending">Pending</div>
+            </div>
+            <div class="promise-item">
+              <div class="promise-check" onclick="togglePromise(this)"></div>
+              <div class="promise-info">
+                <div class="promise-text">Share API integration documentation with Ravi (CTO)</div>
+                <div class="promise-meta">Promised Mar 18 · Due Mar 25 · <span
+                    style="color:var(--accent2)">Overdue</span></div>
+              </div>
+              <div class="promise-status pending">Pending</div>
+            </div>
+            <div class="promise-item" style="opacity:0.6">
+              <div class="promise-check done" onclick="togglePromise(this)"></div>
+              <div class="promise-info">
+                <div class="promise-text done">Send product overview deck after initial call</div>
+                <div class="promise-meta">Promised Feb 10 · Completed Feb 11</div>
+              </div>
+              <div class="promise-status done-s">Done</div>
+            </div>
+          </div>
+
+          <div style="margin-top:20px">
+            <button class="nav-btn" onclick="addPromiseManually()" style="font-size:13px;padding:10px 18px;">+ Add
+              Commitment Manually</button>
+          </div>
+        </div>
+
+        <!-- ── CHAT TAB ── -->
+        <div id="tab-chat" style="display:none">
+          <div class="section-header">
+            <div class="section-title">💬 Ask the Agent</div>
+            <div class="section-badge">Memory-Aware</div>
+          </div>
+
+          <div style="margin-bottom:16px">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:300">Suggested questions:</div>
+            <div class="hint-chips" id="hintChips">
+              <div class="hint-chip" onclick="fillHint(this)">What did we promise last time?</div>
+              <div class="hint-chip" onclick="fillHint(this)">What objections has Arjun raised?</div>
+              <div class="hint-chip" onclick="fillHint(this)">What's the best angle for pricing?</div>
+              <div class="hint-chip" onclick="fillHint(this)">Draft a follow-up email</div>
+              <div class="hint-chip" onclick="fillHint(this)">What topics get Arjun excited?</div>
+            </div>
+          </div>
+
+          <div class="chat-area">
+            <div class="chat-header">
+              <div class="ai-dot"></div>
+              <div class="chat-title">PrepSync Agent</div>
+              <div class="chat-sub">4 memory sessions · Arjun Patel</div>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+              <div class="msg ai">
+                <div class="msg-avatar ai">AI</div>
+                <div>
+                  <div class="msg-bubble">Hey! I've loaded all 4 of your past interactions with Arjun Patel. I can help
+                    you prep for today's Q2 Strategy Review — ask me anything about past discussions, objections,
+                    promises, or what to avoid. 🧠</div>
+                  <div class="msg-time">Just now</div>
+                </div>
+              </div>
+            </div>
+            <div class="chat-input-area">
+              <textarea class="chat-input" id="chatInput" placeholder="Ask about past meetings, objections, promises..."
+                rows="1" onkeydown="handleChatKey(event)"></textarea>
+              <button class="send-btn" id="sendBtn" onclick="sendChatMessage()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── LOG MEETING TAB ── -->
+        <div id="tab-new" style="display:none">
+          <div class="section-header">
+            <div class="section-title">📝 Log a Meeting</div>
+          </div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.7;font-weight:300">
+            The AI agent will extract key insights, promises, and sentiment automatically and store them in Hindsight
+            memory.
+          </div>
+
+          <div class="input-panel">
+            <div class="input-grid">
+              <div class="input-group">
+                <div class="input-label">Contact</div>
+                <input class="input-field" type="text" placeholder="Arjun Patel" value="Arjun Patel" id="logContact" />
+              </div>
+              <div class="input-group">
+                <div class="input-label">Meeting Date</div>
+                <input class="input-field" type="date" id="logDate" />
+              </div>
+              <div class="input-group">
+                <div class="input-label">Meeting Time</div>
+                <input class="input-field" type="time" id="logTime" />
+              </div>
+              <div class="input-group">
+                <div class="input-label">Meeting Title</div>
+                <input class="input-field" type="text" placeholder="e.g. Q2 Strategy Review" id="logTitle" />
+              </div>
+              <div class="input-group">
+                <div class="input-label">Duration</div>
+                <input class="input-field" type="text" placeholder="e.g. 45 min" id="logDuration" />
+              </div>
+              <div class="input-group">
+                <div class="input-label">Participants</div>
+                <input class="input-field" type="text" placeholder="e.g. Siddharth, Arjun Patel" id="logParticipants" />
+              </div>
+              <div class="input-group full">
+                <div class="input-label">Meeting Notes / Transcript</div>
+                <textarea class="input-field"
+                  placeholder="Paste your meeting notes or transcript here. The AI will extract key insights, action items, promises, objections, and sentiment automatically..."
+                  id="logNotes" style="min-height:160px"></textarea>
+              </div>
+            </div>
+
+            <div style="margin-top:20px;display:flex;gap:12px;align-items:center">
+              <button class="prep-btn" id="logBtn" onclick="logMeeting()" style="padding:12px 28px">
+                🧠 Extract & Save to Memory
+              </button>
+              <span style="font-size:12px;color:var(--muted);font-weight:300">AI will auto-extract promises, objections
+                & sentiment</span>
+            </div>
+          </div>
+
+          <div id="extractedInsights" style="display:none">
+            <div class="section-header">
+              <div class="section-title">✨ Extracted Insights</div>
+              <div class="section-badge">AI Extracted</div>
+            </div>
+            <div id="insightsContent"></div>
+          </div>
+        </div>
+
+        <!-- ── RECORDINGS TAB ── -->
+        <div id="tab-recordings" style="display:none">
+          <div class="section-header">
+            <div class="section-title">🎙 Meeting Recordings</div>
+            <button class="nav-btn primary" onclick="openUploadRecording()" style="font-size:13px">+ Upload
+              Recording</button>
+          </div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.7;font-weight:300">
+            Upload audio or video recordings. AI will transcribe and extract insights automatically.
+          </div>
+
+          <div id="recordingsList">
+            <div class="recording-item">
+              <div class="rec-play-btn" onclick="playRecording(this, 'Q2 Strategy Review')">▶</div>
+              <div class="rec-info">
+                <div class="rec-title">Q2 Strategy Review</div>
+                <div class="rec-meta">Apr 4, 2026 · with Arjun Patel</div>
+              </div>
+              <div class="audio-wave" id="wave1">
+                <div class="audio-bar" style="height:8px"></div>
+                <div class="audio-bar" style="height:16px"></div>
+                <div class="audio-bar" style="height:12px"></div>
+                <div class="audio-bar" style="height:20px"></div>
+                <div class="audio-bar" style="height:10px"></div>
+                <div class="audio-bar" style="height:18px"></div>
+                <div class="audio-bar" style="height:14px"></div>
+              </div>
+              <div class="rec-duration">45:12</div>
+              <div class="rec-badge processed">Processed</div>
+            </div>
+
+            <div class="recording-item">
+              <div class="rec-play-btn" onclick="playRecording(this, 'API Integration Kickoff')">▶</div>
+              <div class="rec-info">
+                <div class="rec-title">API Integration Kickoff</div>
+                <div class="rec-meta">Mar 18, 2026 · with Arjun Patel</div>
+              </div>
+              <div class="audio-wave" id="wave2">
+                <div class="audio-bar" style="height:14px"></div>
+                <div class="audio-bar" style="height:9px"></div>
+                <div class="audio-bar" style="height:18px"></div>
+                <div class="audio-bar" style="height:12px"></div>
+                <div class="audio-bar" style="height:20px"></div>
+                <div class="audio-bar" style="height:8px"></div>
+                <div class="audio-bar" style="height:16px"></div>
+              </div>
+              <div class="rec-duration">28:47</div>
+              <div class="rec-badge processed">Processed</div>
+            </div>
+
+            <div class="recording-item">
+              <div class="rec-play-btn" onclick="playRecording(this, 'Demo & Fit Assessment')">▶</div>
+              <div class="rec-info">
+                <div class="rec-title">Demo & Fit Assessment</div>
+                <div class="rec-meta">Feb 27, 2026 · with Arjun Patel</div>
+              </div>
+              <div class="audio-wave">
+                <div class="audio-bar" style="height:20px"></div>
+                <div class="audio-bar" style="height:12px"></div>
+                <div class="audio-bar" style="height:16px"></div>
+                <div class="audio-bar" style="height:8px"></div>
+                <div class="audio-bar" style="height:18px"></div>
+                <div class="audio-bar" style="height:14px"></div>
+                <div class="audio-bar" style="height:10px"></div>
+              </div>
+              <div class="rec-duration">59:03</div>
+              <div class="rec-badge processed">Processed</div>
+            </div>
+          </div>
+
+          <div style="margin-top:28px">
+            <div class="section-header">
+              <div class="section-title" style="font-size:14px">📤 Process a New Recording</div>
+            </div>
+            <div class="rec-upload-area" onclick="openUploadRecording()">
+              <div class="rec-upload-icon">🎙</div>
+              <div class="rec-upload-title">Upload Recording</div>
+              <div class="rec-upload-sub">Drag & drop or click · MP3, MP4, M4A, WAV supported</div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="nav-btn" onclick="showToast('🔗 Zoom integration — coming soon')"
+                style="font-size:13px;padding:10px 18px;">
+                📹 Connect Zoom
+              </button>
+              <button class="nav-btn" onclick="showToast('📅 Google Meet integration — coming soon')"
+                style="font-size:13px;padding:10px 18px;">
+                📅 Connect Google Meet
+              </button>
+              <button class="nav-btn" onclick="showToast('💻 Teams integration — coming soon')"
+                style="font-size:13px;padding:10px 18px;">
+                💻 Connect Teams
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer"></div>
+
+  <!-- ══ LOGIN MODAL ══ -->
+  <div class="modal-overlay login-modal" id="loginModal" style="display:none"
+    onclick="closeModalOnOverlay(event, 'loginModal')">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title">Welcome to PrepSync</div>
+        <button class="modal-close" onclick="closeModal('loginModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="login-tabs">
+          <button class="login-tab active" id="signinTab" onclick="switchLoginTab('signin')">Sign In</button>
+          <button class="login-tab" id="signupTab" onclick="switchLoginTab('signup')">Create Account</button>
+        </div>
+
+        <div id="loginFormArea">
+          <div id="googleBtnArea" style="margin-bottom: 12px; width: 100%;"></div>
+          
+          <button class="social-btn" onclick="socialAuth('Microsoft')">
+            <svg width="16" height="16" viewBox="0 0 21 21">
+              <rect width="10" height="10" fill="#f25022" />
+              <rect x="11" width="10" height="10" fill="#7fba00" />
+              <rect y="11" width="10" height="10" fill="#00a4ef" />
+              <rect x="11" y="11" width="10" height="10" fill="#ffb900" />
+            </svg>
+            Continue with Microsoft
+          </button>
+
+          <div class="divider"><span>or email</span></div>
+
+          <div class="input-group" style="margin-bottom:14px">
+            <div class="input-label">Email</div>
+            <input class="input-field" type="email" id="loginEmail" placeholder="you@company.com" />
+          </div>
+          <div class="input-group" id="loginPasswordGroup" style="margin-bottom:14px">
+            <div class="input-label">Password</div>
+            <input class="input-field" type="password" id="loginPassword" placeholder="••••••••" />
+          </div>
+          <div class="input-group" id="signupNameGroup" style="display:none;margin-bottom:14px">
+            <div class="input-label">Full Name</div>
+            <input class="input-field" type="text" id="signupName" placeholder="Your name" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="nav-btn" onclick="closeModal('loginModal')">Cancel</button>
+        <button class="nav-btn primary" id="loginSubmitBtn" onclick="submitLogin()">Sign In</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SETTINGS MODAL ══ -->
+  <div class="modal-overlay" id="settingsModal" style="display:none"
+    onclick="closeModalOnOverlay(event, 'settingsModal')">
+    <div class="modal" style="width:500px" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title">⚙️ Settings</div>
+        <button class="modal-close" onclick="closeModal('settingsModal')">×</button>
+      </div>
+      <div class="modal-body">
+
+        <div class="settings-section">
+          <div class="settings-section-title">Account</div>
+          <div
+            style="display:flex;align-items:center;gap:14px;padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;margin-bottom:14px">
+            <div
+              style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#a855f7);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;color:#fff"
+              id="settingsAvatarText">?</div>
+            <div>
+              <div style="font-weight:700;font-size:14px" id="settingsUserName">Guest</div>
+              <div style="font-size:12px;color:var(--muted);font-weight:300" id="settingsUserEmail">Not signed in</div>
+            </div>
+            <button class="nav-btn" style="margin-left:auto;font-size:12px" id="settingsAuthBtn"
+              onclick="handleSettingsAuth()">Sign In</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Memory & AI</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Hindsight Memory</div>
+              <div class="settings-row-sub">Persist context across all meetings</div>
+            </div>
+            <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Auto-extract Promises</div>
+              <div class="settings-row-sub">AI finds and tracks commitments automatically</div>
+            </div>
+            <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Sentiment Analysis</div>
+              <div class="settings-row-sub">Track relationship health over time</div>
+            </div>
+            <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Auto-transcribe Recordings</div>
+              <div class="settings-row-sub">Process recordings on upload</div>
+            </div>
+            <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Notifications</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Pre-meeting Brief Reminder</div>
+              <div class="settings-row-sub">30 minutes before each meeting</div>
+            </div>
+            <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Overdue Commitment Alerts</div>
+              <div class="settings-row-sub">Daily digest of pending items</div>
+            </div>
+            <button class="toggle" onclick="this.classList.toggle('on')"></button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Integrations</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Zoom</div>
+              <div class="settings-row-sub">Auto-import recordings</div>
+            </div>
+            <button class="nav-btn" style="font-size:12px"
+              onclick="showToast('🔗 Zoom connection — coming soon')">Connect</button>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Google Calendar</div>
+              <div class="settings-row-sub">Sync upcoming meetings</div>
+            </div>
+            <button class="nav-btn" style="font-size:12px"
+              onclick="showToast('📅 Calendar sync — coming soon')">Connect</button>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Salesforce CRM</div>
+              <div class="settings-row-sub">Two-way contact sync</div>
+            </div>
+            <button class="nav-btn" style="font-size:12px"
+              onclick="showToast('🔄 Salesforce sync — coming soon')">Connect</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Danger Zone</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Clear All Memory</div>
+              <div class="settings-row-sub">Permanently erase all Hindsight data</div>
+            </div>
+            <button class="nav-btn" style="font-size:12px;border-color:rgba(255,107,107,0.3);color:var(--accent2)"
+              onclick="confirmClearMemory()">Clear</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="nav-btn primary" onclick="saveSettings()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ UPLOAD RECORDING MODAL ══ -->
+  <div class="modal-overlay" id="uploadRecModal" style="display:none"
+    onclick="closeModalOnOverlay(event, 'uploadRecModal')">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title">🎙 Upload Recording</div>
+        <button class="modal-close" onclick="closeModal('uploadRecModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="rec-upload-area" id="dropZone"
+          ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+          ondragleave="this.style.borderColor='var(--border)'" ondrop="handleFileDrop(event)"
+          onclick="document.getElementById('fileInput').click()">
+          <div class="rec-upload-icon" id="dropIcon">🎙</div>
+          <div class="rec-upload-title" id="dropTitle">Drag & drop or click to browse</div>
+          <div class="rec-upload-sub" id="dropSub">MP3, MP4, M4A, WAV · Max 500MB</div>
+        </div>
+        <input type="file" id="fileInput" accept="audio/*,video/*" style="display:none"
+          onchange="handleFileSelect(event)" />
+
+        <div class="input-group" style="margin-bottom:14px">
+          <div class="input-label">Associated Contact</div>
+          <input class="input-field" type="text" id="recContact" placeholder="e.g. Arjun Patel" value="Arjun Patel" />
+        </div>
+        <div class="input-group">
+          <div class="input-label">Meeting Title (optional)</div>
+          <input class="input-field" type="text" id="recTitle" placeholder="e.g. Q2 Strategy Review" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="nav-btn" onclick="closeModal('uploadRecModal')">Cancel</button>
+        <button class="nav-btn primary" id="processRecBtn" onclick="processRecording()">
+          🧠 Process with AI
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ADD CONTACT MODAL ══ -->
+  <div class="modal-overlay" id="addContactModal" style="display:none"
+    onclick="closeModalOnOverlay(event, 'addContactModal')">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title">👤 Add New Contact</div>
+        <button class="modal-close" onclick="closeModal('addContactModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group" style="margin-bottom:14px">
+          <div class="input-label">Full Name</div>
+          <input class="input-field" type="text" id="newContactName" placeholder="e.g. Arjun Patel" />
+        </div>
+        <div class="input-group" style="margin-bottom:14px">
+          <div class="input-label">Role</div>
+          <input class="input-field" type="text" id="newContactRole" placeholder="e.g. VP Product" />
+        </div>
+        <div class="input-group">
+          <div class="input-label">Company</div>
+          <input class="input-field" type="text" id="newContactCompany" placeholder="e.g. TechCorp" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="nav-btn" onclick="closeModal('addContactModal')">Cancel</button>
+        <button class="nav-btn primary" onclick="saveNewContact()">Save Contact</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ALARM MODAL ══ -->
+  <div class="modal-overlay" id="alarmModal" style="display:none; z-index: 10000;">
+    <div class="modal alarm-modal" style="width:400px; text-align: center; border: 2px solid var(--accent3); position: relative; overflow: hidden;">
+      <div style="position: absolute; top: -50px; left: -50px; width: 100px; height: 100px; background: var(--accent3); filter: blur(60px); opacity: 0.3; pointer-events: none;"></div>
+      
+      <div class="modal-body" style="padding: 40px 30px;">
+        <div class="alarm-icon" style="font-size: 56px; margin-bottom: 24px; display: inline-block; animation: alarmPulse 1.5s infinite;">🔔</div>
+        <div style="font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--accent3); font-weight: 800; margin-bottom: 12px;">Meeting Starting Now</div>
+        <div id="alarmMeetingTitle" style="font-size: 24px; font-weight: 900; margin-bottom: 8px; color: #fff;">Q2 Strategy Review</div>
+        <div id="alarmMeetingContact" style="font-size: 15px; color: var(--muted); margin-bottom: 32px; font-weight: 300;">with Arjun Patel</div>
+        
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <button class="prep-btn" onclick="joinMeetingFromAlarm()" style="background: var(--accent3); color: white; border: none; width: 100%; padding: 16px; font-weight: 700; box-shadow: 0 4px 15px rgba(67,233,123,0.3);">
+            📹 Join Meeting
+          </button>
+          <button class="nav-btn" onclick="closeAlarm()" style="width: 100%; padding: 14px; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);">
+            Dismiss
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <audio id="alarmSound" loop>
+    <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
+  </audio>
+
+  <style>
+    @keyframes alarmPulse {
+      0% { transform: scale(1); filter: drop-shadow(0 0 0px var(--accent3)); }
+      50% { transform: scale(1.15); filter: drop-shadow(0 0 20px var(--accent3)); }
+      100% { transform: scale(1); filter: drop-shadow(0 0 0px var(--accent3)); }
+    }
+    .alarm-modal {
+      background: #0a0a0f !important;
+      border-radius: 24px !important;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+    }
+  </style>
+
+  <script>
+    // ══════════════════════════════════════════════
+    //  STATE
+    // ══════════════════════════════════════════════
+    const defaultContacts = [
+      { 
+        name: 'Siddharth', role: 'Director', company: 'Denovate', meetings: 4,
+        history: [
+          { date: 'APR 4, 2026', time: '3:00 PM', duration: '45 MIN', title: 'Q1 Review & Expansion Discussion', notes: 'Arjun was pleased with Q1 metrics. Raised concern about onboarding friction. Agreed to send revised onboarding deck by Apr 10. Competitor Nexus mentioned — Arjun felt our analytics were stronger but pricing was a blocker.', sentiment: 'Positive', tags: ['Promise Made', 'Budget Concern', 'Competitor: Nexus'] },
+          { date: 'MAR 18, 2026', time: '11:00 AM', duration: '30 MIN', title: 'API Integration Kickoff', notes: 'Technical deep-dive on API integration timeline. Arjun introduced their CTO Ravi who had questions about rate limits and auth flows. Promised to share integration docs.', sentiment: 'Neutral', tags: ['Promise Made', 'Technical', 'New Stakeholder: Ravi (CTO)'] },
+          { date: 'FEB 27, 2026', time: '2:00 PM', duration: '60 MIN', title: 'Demo & Fit Assessment', notes: 'First detailed product demo. Arjun reacted strongly to the reporting module. Expressed concern about data migration. Decision timeline: Q2 budget approval needed.', sentiment: 'Positive', tags: ['Strong Buy Signal', 'Data Migration Risk', 'Q2 Decision'] },
+          { date: 'FEB 10, 2026', time: '10:00 AM', duration: '20 MIN', title: 'Initial Discovery Call', notes: 'Cold outreach that converted. Arjun leads product strategy. Team of 12, using legacy analytics tools. Pain point: manual reporting taking 6+ hours/week per PM.', sentiment: 'Neutral', tags: ['First Contact', 'Pain: Manual Reporting', 'Team Size: 12'] }
+        ]
+      },
+      { name: 'Vinay', role: 'CTO', company: 'Denovate', meetings: 2, history: [] },
+      { name: 'Krupakar', role: 'CEO', company: 'Denovate', meetings: 1, history: [] },
+      { name: 'Karthik', role: 'Manager', company: 'Denovate', meetings: 5, history: [] },
+      { name: 'Akash', role: 'Head of Strategy', company: 'Denovate', meetings: 3, history: [] },
+    ];
+
+    let contacts = JSON.parse(localStorage.getItem('prepSyncContacts')) || defaultContacts;
+    let activeContact = 0;
+    let chatHistory = [];
+    let currentUser = null;
+    let next3PM = new Date();
+    next3PM.setHours(15, 0, 0, 0);
+    if (next3PM < new Date()) next3PM.setDate(next3PM.getDate() + 1);
+
+    let scheduledMeetings = [
+      { title: 'Q2 Strategy Review', contact: 'Arjun Patel', time: next3PM.getTime() }
+    ];
+
+    function saveContactsToStorage() {
+      localStorage.setItem('prepSyncContacts', JSON.stringify(contacts));
+    }
+
+    function renderUpcomingMeetings() {
+      const list = document.getElementById('upcomingList');
+      if (!list) return;
+      list.innerHTML = '';
+      
+      scheduledMeetings.sort((a, b) => a.time - b.time).forEach(m => {
+        const date = new Date(m.time);
+        const isToday = date.toDateString() === new Date().toDateString();
+        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const dateStr = isToday ? 'Today' : date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        
+        const item = document.createElement('div');
+        item.style = "padding:12px;background:rgba(67,233,123,0.05);border:1px solid rgba(67,233,123,0.2);border-radius:10px;font-size:12px; margin-bottom: 8px;";
+        item.innerHTML = `
+          <div style="color:var(--accent3);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;font-weight:700">
+            ${dateStr} ${timeStr}</div>
+          <div style="font-weight:700;font-size:13px;">${m.title}</div>
+          <div style="color:var(--muted);margin-top:2px;font-weight:300;font-size:12px">with ${m.contact}</div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function scheduleAlarm(title, contact, time) {
+      scheduledMeetings.push({ title, contact, time: time.getTime() });
+      renderUpcomingMeetings();
+      
+      const delay = time.getTime() - new Date().getTime();
+      if (delay > 0) {
+        setTimeout(() => {
+          triggerAlarm(title, contact);
+          // Remove from upcoming after it starts
+          scheduledMeetings = scheduledMeetings.filter(m => m.time !== time.getTime());
+          renderUpcomingMeetings();
+        }, delay);
+      }
+    }
+
+    renderUpcomingMeetings();
+
+    function renderContactsList() {
+      const list = document.getElementById('contactList');
+      list.innerHTML = '';
+      contacts.forEach((c, idx) => {
+        const initials = c.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        const card = document.createElement('div');
+        card.className = `contact-card ${activeContact === idx ? 'active' : ''}`;
+        card.onclick = () => selectContact(idx);
+        card.innerHTML = `
+          <div class="avatar">${initials}</div>
+          <div class="contact-info">
+            <div class="contact-name">${c.name}</div>
+            <div class="contact-role">${c.role} — ${c.company}</div>
+          </div>
+          <div class="meeting-count">${c.meetings}</div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    // Initialize list
+    renderContactsList();
+
+    // ══════════════════════════════════════════════
+    //  COUNTDOWN
+    // ══════════════════════════════════════════════
+    function startCountdown() {
+      const target = new Date();
+      target.setHours(15, 0, 0, 0);
+      if (target < new Date()) target.setDate(target.getDate() + 1);
+
+      const timerInterval = setInterval(() => {
+        const diff = target - new Date();
+        if (diff <= 0) { 
+          document.getElementById('countdown').textContent = 'NOW'; 
+          triggerAlarm('Q2 Strategy Review', 'Arjun Patel');
+          clearInterval(timerInterval);
+          return; 
+        }
+        const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
+        const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+        const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+        document.getElementById('countdown').textContent = `${h}:${m}:${s}`;
+      }, 1000);
+    }
+
+    function triggerAlarm(title, contact) {
+      document.getElementById('alarmMeetingTitle').textContent = title;
+      document.getElementById('alarmMeetingContact').textContent = `with ${contact}`;
+      document.getElementById('alarmModal').style.display = 'flex';
+      
+      const sound = document.getElementById('alarmSound');
+      sound.play().catch(e => console.log("Sound blocked by browser:", e));
+      
+      showToast('🔔 Meeting starting now!');
+    }
+
+    function closeAlarm() {
+      document.getElementById('alarmModal').style.display = 'none';
+      document.getElementById('alarmSound').pause();
+      document.getElementById('alarmSound').currentTime = 0;
+    }
+
+    function joinMeetingFromAlarm() {
+      closeAlarm();
+      joinMeeting();
+    }
+
+    startCountdown();
+    document.getElementById('logDate').valueAsDate = new Date();
+
+    // ══════════════════════════════════════════════
+    //  USER / AUTH
+    // ══════════════════════════════════════════════
+    function updateUserUI() {
+      const initials = document.getElementById('userInitials');
+      const userAvatarBtn = document.getElementById('userAvatarBtn');
+      const ddName = document.getElementById('ddUserName');
+      const ddEmail = document.getElementById('ddUserEmail');
+      const settingsName = document.getElementById('settingsUserName');
+      const settingsEmail = document.getElementById('settingsUserEmail');
+      const settingsAvatarText = document.getElementById('settingsAvatarText');
+      const settingsAuthBtn = document.getElementById('settingsAuthBtn');
+
+      if (currentUser) {
+        const parts = currentUser.name.split(' ');
+        const ini = parts.map(p => p[0]).join('').toUpperCase().slice(0, 2);
+        
+        // Update Nav Avatar
+        if (currentUser.picture) {
+          userAvatarBtn.innerHTML = `<img src="${currentUser.picture}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+          settingsAvatarText.innerHTML = `<img src="${currentUser.picture}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+          settingsAvatarText.style.background = 'none';
+        } else {
+          userAvatarBtn.innerHTML = `<span id="userInitials">${ini}</span>`;
+          settingsAvatarText.textContent = ini;
+          settingsAvatarText.style.background = 'linear-gradient(135deg,var(--accent),#a855f7)';
+        }
+
+        ddName.textContent = currentUser.name;
+        ddEmail.textContent = currentUser.email;
+        settingsName.textContent = currentUser.name;
+        settingsEmail.textContent = currentUser.email;
+        settingsAuthBtn.textContent = 'Sign Out';
+        settingsAuthBtn.onclick = () => { signOut(); closeModal('settingsModal'); };
+      } else {
+        userAvatarBtn.innerHTML = `<span id="userInitials">?</span>`;
+        ddName.textContent = 'Guest';
+        ddEmail.textContent = 'Not signed in';
+        settingsName.textContent = 'Guest';
+        settingsEmail.textContent = 'Not signed in';
+        settingsAvatarText.textContent = '?';
+        settingsAvatarText.style.background = 'var(--bg3)';
+        settingsAuthBtn.textContent = 'Sign In';
+        settingsAuthBtn.onclick = () => { closeModal('settingsModal'); openLogin(); };
+      }
+    }
+
+    function toggleUserDropdown() {
+      const dd = document.getElementById('userDropdown');
+      dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+      if (dd.style.display === 'block') {
+        if (!currentUser) {
+          // Show login modal instead
+          dd.style.display = 'none';
+          openLogin();
+        }
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!document.getElementById('userWrap').contains(e.target)) {
+        document.getElementById('userDropdown').style.display = 'none';
+      }
+    });
+
+    function signOut() {
+      currentUser = null;
+      document.getElementById('userDropdown').style.display = 'none';
+      updateUserUI();
+      showToast('👋 Signed out successfully');
+    }
+
+    function socialAuth(provider) {
+      // Simulate OAuth flow
+      const mockUsers = {
+        'Google': { name: 'Alex Johnson', email: 'alex@company.com' },
+        'Microsoft': { name: 'Alex Johnson', email: 'alex@company.com' },
+      };
+      currentUser = mockUsers[provider];
+      closeModal('loginModal');
+      updateUserUI();
+      showToast(`✅ Signed in with ${provider}`);
+    }
+
+    function switchLoginTab(tab) {
+      const isSignup = tab === 'signup';
+      document.getElementById('signinTab').classList.toggle('active', !isSignup);
+      document.getElementById('signupTab').classList.toggle('active', isSignup);
+      document.getElementById('signupNameGroup').style.display = isSignup ? 'flex' : 'none';
+      document.getElementById('loginSubmitBtn').textContent = isSignup ? 'Create Account' : 'Sign In';
+    }
+
+    function submitLogin() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const isSignup = document.getElementById('signupTab').classList.contains('active');
+
+      if (!email) { showToast('❌ Please enter your email'); return; }
+      if (!password) { showToast('❌ Please enter your password'); return; }
+
+      let name = 'User';
+      if (isSignup) {
+        name = document.getElementById('signupName').value.trim() || email.split('@')[0];
+      } else {
+        name = email.split('@')[0];
+        // Capitalize
+        name = name.charAt(0).toUpperCase() + name.slice(1);
+      }
+
+      currentUser = { name, email };
+      closeModal('loginModal');
+      updateUserUI();
+      showToast(`✅ ${isSignup ? 'Account created' : 'Signed in'} as ${name}`);
+    }
+
+    function openLogin() {
+      document.getElementById('loginModal').style.display = 'flex';
+    }
+
+    function handleSettingsAuth() {
+      if (currentUser) {
+        signOut();
+      } else {
+        closeModal('settingsModal');
+        openLogin();
+      }
+    }
+
+    updateUserUI();
+
+    // ══════════════════════════════════════════════
+    //  MODALS
+    // ══════════════════════════════════════════════
+    function openSettings() { document.getElementById('settingsModal').style.display = 'flex'; }
+    function openRecordings() { switchTab('recordings', document.querySelectorAll('.tab')[5]); }
+    function openUploadRecording() { document.getElementById('uploadRecModal').style.display = 'flex'; }
+    function openNewMeeting() { switchTab('new', document.querySelectorAll('.tab')[4]); }
+    function openAddContact() {
+      document.getElementById('addContactModal').style.display = 'flex';
+    }
+
+    function saveNewContact() {
+      const name = document.getElementById('newContactName').value.trim();
+      const role = document.getElementById('newContactRole').value.trim();
+      const company = document.getElementById('newContactCompany').value.trim();
+
+      if (!name || !role || !company) {
+        showToast('❌ Please fill in all fields');
+        return;
+      }
+
+      contacts.push({ name, role, company, meetings: 0 });
+      saveContactsToStorage();
+      renderContactsList();
+      closeModal('addContactModal');
+      
+      // Reset fields
+      document.getElementById('newContactName').value = '';
+      document.getElementById('newContactRole').value = '';
+      document.getElementById('newContactCompany').value = '';
+
+      showToast(`👤 Contact ${name} added!`);
+      
+      // Optionally select the new contact
+      selectContact(contacts.length - 1);
+    }
+
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function closeModalOnOverlay(e, id) { if (e.target === e.currentTarget) closeModal(id); }
+
+    function saveSettings() {
+      closeModal('settingsModal');
+      showToast('✅ Settings saved');
+    }
+
+    function confirmClearMemory() {
+      if (confirm('This will permanently erase all Hindsight memory. Are you sure?')) {
+        showToast('🗑️ Memory cleared');
+      }
+    }
+
+    // ══════════════════════════════════════════════
+    //  TABS
+    // ══════════════════════════════════════════════
+    function switchTab(name, el) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      ['briefing', 'memory', 'promises', 'chat', 'new', 'recordings'].forEach(t => {
+        const el2 = document.getElementById('tab-' + t);
+        if (el2) el2.style.display = t === name ? 'block' : 'none';
+      });
+    }
+
+    // ══════════════════════════════════════════════
+    //  CONTACT SELECTION
+    // ══════════════════════════════════════════════
+    function selectContact(idx) {
+      activeContact = idx;
+      renderContactsList();
+      const c = contacts[idx];
+      document.getElementById('contactName').textContent = c.name;
+      document.getElementById('contactOrg').textContent = `🏢 ${c.company}`;
+      document.getElementById('contactMeetingInfo').textContent = `📅 ${c.meetings} past meetings`;
+      
+      renderTimeline(c);
+      
+      document.getElementById('briefingOutput').style.display = 'none';
+      document.getElementById('briefingPlaceholder').style.display = 'block';
+      chatHistory = [];
+      const msgs = document.getElementById('chatMessages');
+      msgs.innerHTML = `<div class="msg ai"><div class="msg-avatar ai">AI</div><div><div class="msg-bubble">Memory loaded for ${c.name}. I have ${c.meetings} past sessions ready. Ask me anything!</div><div class="msg-time">Just now</div></div></div>`;
+      
+      // Close sidebar on mobile
+      if (window.innerWidth <= 768) {
+        toggleSidebar();
+      }
+    }
+
+    function renderTimeline(contact) {
+      const container = document.getElementById('timelineContainer');
+      if (!container) return;
+      
+      // Keep the line
+      container.innerHTML = '<div class="timeline-line"></div>';
+      
+      if (!contact.history || contact.history.length === 0) {
+        container.innerHTML += `<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">No past interactions logged for ${contact.name} yet.</div>`;
+        return;
+      }
+
+      contact.history.forEach(m => {
+        const item = document.createElement('div');
+        item.className = 'timeline-item';
+        
+        const tagsHtml = (m.tags || []).map(t => `<div class="tag ${t.toLowerCase().includes('promise') || t.toLowerCase().includes('signal') ? 'highlight' : ''}">${t}</div>`).join('');
+        
+        item.innerHTML = `
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">${m.date.toUpperCase()} · ${m.time} · ${m.duration}</div>
+            <div class="timeline-title">${m.title}</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.7;font-weight:300">${m.notes}</div>
+            <div class="timeline-tags">${tagsHtml}</div>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function joinMeeting() {
+      showToast('🚀 Launching Google Meet...');
+      window.open('https://meet.google.com/new', '_blank');
+    }
+
+    // ══════════════════════════════════════════════
+    //  AI BRIEFING
+    // ══════════════════════════════════════════════
+    async function generateBriefing() {
+      const btn = document.getElementById('prepBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Generating...';
+
+      const c = contacts[activeContact];
+
+      const historySummary = (c.history || []).map(m => `- ${m.date}: ${m.title}. Notes: ${m.notes}`).join('\n');
+
+      const systemPrompt = `You are PrepSync, an AI meeting prep agent with persistent memory of past meetings stored in Hindsight Cloud.
+You have memory for ${c.name} (${c.role} at ${c.company}) with ${c.meetings} past sessions.
+
+PAST MEETING HISTORY FROM CLOUD:
+${historySummary || 'No past meetings logged yet.'}
+
+Generate a comprehensive meeting briefing based on this history.
+Return ONLY a JSON object:
+{
+  "relationship_summary": "2-3 sentence warm summary",
+  "key_talking_points": ["point1","point2","point3"],
+  "watch_outs": ["risk1","risk2"],
+  "memory_highlights": ["notable thing 1","notable thing 2","notable thing 3"],
+  "opening_line": "A personalized opening line for the meeting",
+  "energy_level": "High/Medium/Low"
+}`;
+
+      const userMsg = `Generate a meeting briefing for my upcoming meeting with ${c.name}, ${c.role} at ${c.company}. Past meetings: ${c.meetings}. Key context: pricing concerns, Q2 budget approval incoming. Open promises: onboarding deck and API docs.`;
+
+      try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 1000,
+            system: systemPrompt,
+            messages: [{ role: 'user', content: userMsg }]
+          })
+        });
+        const data = await response.json();
+        const raw = data.content?.map(b => b.text || '').join('');
+        const clean = raw.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(clean);
+        renderBriefing(parsed, c.name);
+        showToast('✅ Briefing generated from memory');
+      } catch (e) {
+        renderBriefing({
+          relationship_summary: `You've had ${c.meetings} productive sessions with ${c.name}. Relationship is warm — they've shown strong interest in the analytics module. Budget is the main friction point.`,
+          key_talking_points: [
+            'Follow up on the overdue onboarding deck — offer to walk them through it live',
+            'Q2 budget just opened — revisit enterprise pricing with the ROI calculator',
+            'Share the Q3 roadmap analytics dashboard preview they asked about',
+          ],
+          watch_outs: [
+            'Do NOT open with pricing — let them bring it up after the value discussion',
+            'Ravi (their CTO) had API concerns — confirm you sent the docs before this call',
+          ],
+          memory_highlights: [
+            'Called our reporting module "exactly what we need" in the Feb demo',
+            'Expressed frustration about manual reporting (6+ hrs/week per PM)',
+            'Mentioned Nexus as a competitor but thinks our analytics beat them',
+          ],
+          opening_line: `"${c.name}, great to reconnect — I wanted to start by getting your team's take on the onboarding deck, let's make sure that's landing right."`,
+          energy_level: 'High'
+        }, c.name);
+        showToast('⚡ Briefing ready (offline mode)');
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = '⚡ Regenerate Brief';
+    }
+
+    function renderBriefing(data, name) {
+      const energyColor = data.energy_level === 'High' ? 'var(--accent3)' : data.energy_level === 'Medium' ? '#f59e0b' : 'var(--accent2)';
+      const html = `
+    <div class="briefing-card-header">
+      <div>
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:4px;font-weight:700">AI Briefing · ${name}</div>
+        <div style="font-weight:900;font-size:16px">Pre-Meeting Intelligence Report</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="font-size:11px;color:var(--muted);font-weight:300">Relationship Energy</div>
+        <div style="background:${energyColor}22;border:1px solid ${energyColor}44;color:${energyColor};padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700">${data.energy_level}</div>
+      </div>
+    </div>
+    <div class="briefing-card-body">
+      <div class="briefing-section-label">Relationship Context</div>
+      <div class="briefing-text">${data.relationship_summary}</div>
+
+      <div class="briefing-section-label">Memory Highlights</div>
+      <ul class="briefing-list">
+        ${data.memory_highlights.map(h => `<li class="success">🧠 ${h}</li>`).join('')}
+      </ul>
+
+      <div class="briefing-section-label">Key Talking Points</div>
+      <ul class="briefing-list">
+        ${data.key_talking_points.map(t => `<li>${t}</li>`).join('')}
+      </ul>
+
+      <div class="briefing-section-label">Watch Outs</div>
+      <ul class="briefing-list">
+        ${data.watch_outs.map(w => `<li class="warning">⚠️ ${w}</li>`).join('')}
+      </ul>
+
+      <div class="briefing-section-label">Suggested Opening</div>
+      <div style="background:rgba(108,99,255,0.08);border:1px solid rgba(108,99,255,0.2);border-radius:10px;padding:14px 18px;font-size:13px;line-height:1.7;font-style:italic;color:var(--text);font-weight:300">
+        ${data.opening_line}
+      </div>
+    </div>`;
+
+      const out = document.getElementById('briefingOutput');
+      out.innerHTML = html;
+      out.style.display = 'block';
+      document.getElementById('briefingPlaceholder').style.display = 'none';
+    }
+
+    // ══════════════════════════════════════════════
+    //  CHAT
+    // ══════════════════════════════════════════════
+    function fillHint(el) {
+      document.getElementById('chatInput').value = el.textContent;
+      document.getElementById('chatInput').focus();
+      switchTab('chat', document.querySelectorAll('.tab')[3]);
+    }
+
+    function handleChatKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); }
+    }
+
+    function addMsg(role, text) {
+      const msgs = document.getElementById('chatMessages');
+      const isAI = role === 'ai';
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const div = document.createElement('div');
+      div.className = `msg ${role}`;
+      div.innerHTML = `
+    <div class="msg-avatar ${role}">${isAI ? 'AI' : 'Me'}</div>
+    <div>
+      <div class="msg-bubble">${text.replace(/\n/g, '<br>')}</div>
+      <div class="msg-time">${time}</div>
+    </div>`;
+      msgs.appendChild(div);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function showTyping() {
+      const msgs = document.getElementById('chatMessages');
+      const div = document.createElement('div');
+      div.className = 'msg ai';
+      div.id = 'typingIndicator';
+      div.innerHTML = `<div class="msg-avatar ai">AI</div><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+      msgs.appendChild(div);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function removeTyping() { document.getElementById('typingIndicator')?.remove(); }
+
+    async function sendChatMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      input.value = '';
+      addMsg('user', text);
+      chatHistory.push({ role: 'user', content: text });
+
+      const sendBtn = document.getElementById('sendBtn');
+      sendBtn.disabled = true;
+      showTyping();
+
+      const c = contacts[activeContact];
+
+      const historySummary = (c.history || []).map(m => `- ${m.date}: ${m.title}. Summary: ${m.notes}`).join('\n');
+
+      const systemPrompt = `You are PrepSync, a memory-powered AI meeting preparation agent connected to Hindsight Cloud.
+You have loaded Hindsight memory for ${c.name} (${c.role} at ${c.company}) with ${c.meetings} past meeting sessions.
+
+ACTUAL MEETING HISTORY FROM CLOUD:
+${historySummary || 'No history found.'}
+
+Answer questions about past meetings concisely. Be specific, reference actual past interactions from the history above. Keep responses under 150 words.`;
+
+      try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 1000,
+            system: systemPrompt,
+            messages: chatHistory.map(m => ({ role: m.role, content: m.content }))
+          })
+        });
+        const data = await response.json();
+        const reply = data.content?.map(b => b.text || '').join('').trim() || 'Memory loaded. Ask me anything!';
+        removeTyping();
+        addMsg('ai', reply);
+        chatHistory.push({ role: 'assistant', content: reply });
+      } catch (e) {
+        removeTyping();
+        const fallbacks = {
+          'promise': "From memory: You have 2 open promises — (1) Send the revised onboarding deck (overdue since Apr 10) and (2) Share API integration docs with Ravi, their CTO (overdue since Mar 25).",
+          'objection': "Arjun has raised 2 recurring objections: (1) Pricing — feels the enterprise tier is too high for their team size, and (2) Data migration risk.",
+          'pricing': "Best angle: lead with ROI. Arjun mentioned 6+ hours/week per PM on manual reporting. With 12 PMs, that's 72+ hours/week. Q2 just opened — it's the right moment.",
+          'email': `Here's a draft:\n\nHey ${c.name},\n\nGreat catching up today. As promised, I'm attaching the onboarding deck and the API doc for Ravi.\n\nLooking forward to moving things forward in Q2.\n\n— [Your name]`,
+          'excite': `${c.name} lights up around (1) the reporting & analytics module, (2) team productivity metrics, and (3) anything with a clear ROI story.`
+        };
+        const lower = text.toLowerCase();
+        let reply = `From memory: ${c.name} has been a warm prospect with strong engagement. ${c.meetings} sessions logged. Anything specific you want to know?`;
+        for (const [key, val] of Object.entries(fallbacks)) {
+          if (lower.includes(key)) { reply = val; break; }
+        }
+        addMsg('ai', reply);
+        chatHistory.push({ role: 'assistant', content: reply });
+      }
+
+      sendBtn.disabled = false;
+    }
+
+    // ══════════════════════════════════════════════
+    //  LOG MEETING
+    // ══════════════════════════════════════════════
+    async function logMeeting() {
+      const notes = document.getElementById('logNotes').value.trim();
+      const title = document.getElementById('logTitle').value.trim();
+      const contact = document.getElementById('logContact').value.trim();
+      const time = document.getElementById('logTime').value;
+      const participants = document.getElementById('logParticipants').value.trim();
+
+      if (!notes || !title) { showToast('❌ Please fill in the meeting title and notes'); return; }
+
+      const btn = document.getElementById('logBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Extracting insights...';
+
+      const systemPrompt = `You are an AI meeting analyst. Extract structured insights from meeting notes.
+Return ONLY a JSON object (no markdown, no backticks):
+{"summary":"2 sentence summary","promises":["promise1","promise2"],"objections":["objection1"],"sentiment":"Positive/Neutral/Negative","key_topics":["topic1","topic2","topic3"],"next_steps":["step1","step2"]}`;
+
+      try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 1000,
+            system: systemPrompt,
+            messages: [{ role: 'user', content: `Meeting with ${contact}. Participants: ${participants}. Title: ${title}. Time: ${time}.\n\nNotes:\n${notes}` }]
+          })
+        });
+        const data = await response.json();
+        const raw = data.content?.map(b => b.text || '').join('');
+        const clean = raw.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(clean);
+        
+        // Save to History
+        const c = contacts[activeContact];
+        const newEntry = {
+          date: new Date(document.getElementById('logDate').value).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }),
+          time: document.getElementById('logTime').value,
+          duration: document.getElementById('logDuration').value || '30 MIN',
+          title: title,
+          notes: parsed.summary,
+          sentiment: parsed.sentiment,
+          tags: [...(parsed.promises || []).map(p => 'Promise: ' + p), ...(parsed.key_topics || [])]
+        };
+        
+        if (!c.history) c.history = [];
+        c.history.unshift(newEntry);
+        c.meetings = c.history.length;
+        
+        saveContactsToStorage();
+        renderTimeline(c);
+        renderContactsList();
+        
+        renderInsights(parsed);
+        showToast('🧠 Saved to Hindsight Cloud memory!');
+      } catch (e) {
+        const c = contacts[activeContact];
+        const mockParsed = {
+          summary: `Meeting with ${contact} about ${title}. Key discussions logged and extracted by AI.`,
+          promises: ['Send follow-up materials within 48 hours', 'Schedule next check-in'],
+          objections: ['Timeline concerns raised'],
+          sentiment: 'Positive',
+          key_topics: [title, 'Follow-ups', 'Next Steps'],
+          next_steps: ['Send recap email', 'Update CRM', 'Prepare materials']
+        };
+
+        const newEntry = {
+          date: new Date(document.getElementById('logDate').value).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }),
+          time: document.getElementById('logTime').value,
+          duration: document.getElementById('logDuration').value || '30 MIN',
+          title: title,
+          notes: mockParsed.summary,
+          sentiment: mockParsed.sentiment,
+          tags: ['AI Processed', title]
+        };
+
+        if (!c.history) c.history = [];
+        c.history.unshift(newEntry);
+        c.meetings = c.history.length;
+
+        saveContactsToStorage();
+        renderTimeline(c);
+        renderContactsList();
+
+        renderInsights(mockParsed);
+        showToast('🧠 Saved to Hindsight Cloud (offline mode)');
+      }
+
+      const dateStr = document.getElementById('logDate').value;
+      const timeStr = document.getElementById('logTime').value;
+      if (dateStr && timeStr) {
+        const mDate = new Date(`${dateStr}T${timeStr}`);
+        if (mDate > new Date()) {
+          scheduleAlarm(title, contact, mDate);
+          showToast(`⏰ Alarm set for ${mDate.toLocaleTimeString()}`);
+        }
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = '🧠 Extract & Save to Memory';
+    }
+
+    function renderInsights(data) {
+      const sentColor = data.sentiment === 'Positive' ? 'var(--accent3)' : data.sentiment === 'Negative' ? 'var(--accent2)' : '#f59e0b';
+      const html = `
+    <div class="briefing-card" style="margin-bottom:0">
+      <div class="briefing-card-header">
+        <div style="font-weight:900;font-size:15px">Extraction Complete</div>
+        <div style="background:${sentColor}22;border:1px solid ${sentColor}44;color:${sentColor};padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700">
+          ${data.sentiment} Sentiment
+        </div>
+      </div>
+      <div class="briefing-card-body">
+        <div class="briefing-section-label">Summary</div>
+        <div class="briefing-text">${data.summary}</div>
+
+        <div class="briefing-section-label">Promises Extracted (→ added to tracker)</div>
+        <ul class="briefing-list">
+          ${data.promises.map(p => `<li>📌 ${p}</li>`).join('')}
+        </ul>
+
+        ${data.objections?.length ? `<div class="briefing-section-label">Objections Noted</div>
+        <ul class="briefing-list">
+          ${data.objections.map(o => `<li class="warning">⚠️ ${o}</li>`).join('')}
+        </ul>` : ''}
+
+        <div class="briefing-section-label">Key Topics</div>
+        <div class="timeline-tags" style="margin-top:0">
+          ${data.key_topics.map(t => `<div class="tag highlight">${t}</div>`).join('')}
+        </div>
+
+        <div class="briefing-section-label">Next Steps</div>
+        <ul class="briefing-list">
+          ${data.next_steps.map(s => `<li class="success">→ ${s}</li>`).join('')}
+        </ul>
+      </div>
+    </div>`;
+
+      const el = document.getElementById('extractedInsights');
+      document.getElementById('insightsContent').innerHTML = html;
+      el.style.display = 'block';
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ══════════════════════════════════════════════
+    //  PROMISES
+    // ══════════════════════════════════════════════
+    function togglePromise(el) {
+      el.classList.toggle('done');
+      const textEl = el.closest('.promise-item').querySelector('.promise-text');
+      const statusEl = el.closest('.promise-item').querySelector('.promise-status');
+      const isDone = el.classList.contains('done');
+      textEl.classList.toggle('done', isDone);
+      if (isDone) {
+        statusEl.className = 'promise-status done-s';
+        statusEl.textContent = 'Done';
+        el.closest('.promise-item').style.opacity = '0.6';
+      } else {
+        statusEl.className = 'promise-status pending';
+        statusEl.textContent = 'Pending';
+        el.closest('.promise-item').style.opacity = '1';
+      }
+    }
+
+    function addPromiseManually() {
+      const text = prompt('Enter the commitment:');
+      if (!text) return;
+      const list = document.getElementById('promisesList');
+      const div = document.createElement('div');
+      div.className = 'promise-item';
+      div.innerHTML = `
+    <div class="promise-check" onclick="togglePromise(this)"></div>
+    <div class="promise-info">
+      <div class="promise-text">${text}</div>
+      <div class="promise-meta">Added manually · Today</div>
+    </div>
+    <div class="promise-status pending">Pending</div>`;
+      list.prepend(div);
+      showToast('✅ Commitment added');
+    }
+
+    // ══════════════════════════════════════════════
+    //  RECORDINGS
+    // ══════════════════════════════════════════════
+    let activeWave = null;
+    let waveInterval = null;
+
+    function playRecording(btn, title) {
+      const isPlaying = btn.textContent === '⏸';
+      if (isPlaying) {
+        btn.textContent = '▶';
+        if (waveInterval) clearInterval(waveInterval);
+        return;
+      }
+      // Reset all
+      document.querySelectorAll('.rec-play-btn').forEach(b => b.textContent = '▶');
+      if (waveInterval) clearInterval(waveInterval);
+
+      btn.textContent = '⏸';
+      showToast(`🎙 Playing: ${title}`);
+
+      // Animate wave bars for the parent item
+      const item = btn.closest('.recording-item');
+      const bars = item.querySelectorAll('.audio-bar');
+      waveInterval = setInterval(() => {
+        bars.forEach(bar => {
+          bar.style.height = (Math.random() * 18 + 4) + 'px';
+          bar.style.opacity = 0.4 + Math.random() * 0.6;
+        });
+      }, 120);
+
+      // Auto-stop after a bit (demo)
+      setTimeout(() => {
+        btn.textContent = '▶';
+        clearInterval(waveInterval);
+        bars.forEach(bar => { bar.style.height = '10px'; bar.style.opacity = 0.5; });
+      }, 8000);
+    }
+
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (file) updateDropZone(file.name);
+    }
+
+    function handleFileDrop(e) {
+      e.preventDefault();
+      document.getElementById('dropZone').style.borderColor = 'var(--border)';
+      const file = e.dataTransfer.files[0];
+      if (file) updateDropZone(file.name);
+    }
+
+    function updateDropZone(name) {
+      document.getElementById('dropIcon').textContent = '✅';
+      document.getElementById('dropTitle').textContent = name;
+      document.getElementById('dropSub').textContent = 'File ready to process';
+    }
+
+    async function processRecording() {
+      const btn = document.getElementById('processRecBtn');
+      const contact = document.getElementById('recContact').value.trim() || 'Unknown';
+      const title = document.getElementById('recTitle').value.trim() || 'New Recording';
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Processing...';
+
+      // Simulate AI transcription + insight extraction
+      await new Promise(r => setTimeout(r, 2200));
+
+      // Add to recordings list
+      const list = document.getElementById('recordingsList');
+      const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const div = document.createElement('div');
+      div.className = 'recording-item';
+      div.innerHTML = `
+    <div class="rec-play-btn" onclick="playRecording(this, '${title}')">▶</div>
+    <div class="rec-info">
+      <div class="rec-title">${title}</div>
+      <div class="rec-meta">${today} · with ${contact}</div>
+    </div>
+    <div class="audio-wave">
+      ${[...Array(7)].map(() => `<div class="audio-bar" style="height:${Math.floor(Math.random() * 14 + 6)}px"></div>`).join('')}
+    </div>
+    <div class="rec-duration">--:--</div>
+    <div class="rec-badge new">New</div>`;
+      list.prepend(div);
+
+      btn.disabled = false;
+      btn.innerHTML = '🧠 Process with AI';
+      closeModal('uploadRecModal');
+      showToast('✅ Recording processed and added to memory');
+      switchTab('recordings', document.querySelectorAll('.tab')[5]);
+    }
+
+    // ══════════════════════════════════════════════
+    //  GOOGLE AUTH
+    // ══════════════════════════════════════════════
+    window.onload = function () {
+      google.accounts.id.initialize({
+        client_id: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com", // Replace with your real Client ID
+        callback: handleCredentialResponse
+      });
+      google.accounts.id.renderButton(
+        document.getElementById("googleBtnArea"),
+        { theme: "outline", size: "large", width: "100%" }
+      );
+    }
+
+    function handleCredentialResponse(response) {
+      // Decode the JWT (base64)
+      const base64Url = response.credential.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+
+      const user = JSON.parse(jsonPayload);
+      currentUser = {
+        name: user.name,
+        email: user.email,
+        picture: user.picture
+      };
+      
+      closeModal('loginModal');
+      updateUserUI();
+      showToast(`✅ Signed in as ${user.name}`);
+    }
+
+    function socialAuth(provider) {
+      if (provider === 'Google') {
+        google.accounts.id.prompt(); // Shows the One Tap or triggers the button click logic
+        return;
+      }
+      // Simulate OAuth flow for others
+      const mockUsers = {
+        'Microsoft': { name: 'Alex Johnson', email: 'alex@company.com' },
+      };
+      currentUser = mockUsers[provider];
+      closeModal('loginModal');
+      updateUserUI();
+      showToast(`✅ Signed in with ${provider}`);
+    }
+
+    // ══════════════════════════════════════════════
+    //  TOAST
+    // ══════════════════════════════════════════════
+    function toggleSidebar() {
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('sidebarOverlay');
+      sb.classList.toggle('open');
+      ov.classList.toggle('open');
+    }
+
+    function showToast(msg) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3200);
+    }
+  </script>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
